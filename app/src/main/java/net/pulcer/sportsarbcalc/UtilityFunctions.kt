@@ -56,7 +56,13 @@ fun convertFractionalToDecimal(odd: String): Double {
     return numerator / denominator + 1
 }
 
-fun isArbitrageOpportunity(decimalOdds: DecimalOdds): Boolean {
-    val total = decimalOdds.odds.sumOf { 1.0 / it }
-    return total < 1.0
+fun isArbitrageOpportunity(decimalOdds: DecimalOdds): Pair<Boolean, BettingPercentages?> {
+    val inversedOdds = decimalOdds.odds.map { 1.0 / it }
+    val sumInversedOdds = inversedOdds.sum()
+
+    if (sumInversedOdds < 1.0) {
+        val percentages = inversedOdds.map { (it / sumInversedOdds)  }
+        return Pair(true, BettingPercentages(percentages))
+    }
+    return Pair(false, null)
 }

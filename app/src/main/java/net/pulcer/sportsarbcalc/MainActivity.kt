@@ -117,7 +117,10 @@ fun BettingArbCalcScreen(navController: NavController) {
                     println("Event Input Array: $eventOddsArray")
                     val decimalOdds = convertToDecimalOdds(eventOddsArray, selectedFormat)
 
-                    if (isArbitrageOpportunity(decimalOdds)) {
+                    val (arbOpportunity, bettingPercentages) = isArbitrageOpportunity(decimalOdds)
+
+                    if (arbOpportunity) {
+                        println("Betting Percentages Array: $bettingPercentages")
                         navController.navigate("arb")
                     } else {
                         navController.navigate("noArb")

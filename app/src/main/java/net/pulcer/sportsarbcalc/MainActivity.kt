@@ -1,5 +1,6 @@
 package net.pulcer.sportsarbcalc
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import net.pulcer.sportsarbcalc.ui.theme.SportsArbCalcTheme
@@ -51,6 +53,13 @@ fun BettingArbCalcScreen(navController: NavController) {
         var event3Odds by remember { mutableStateOf("") }
         var showAlert by remember { mutableStateOf(false) }
 
+        val context = LocalContext.current
+        var selectedFormat by remember { mutableStateOf(loadSavedFormat(context)) }
+
+        LaunchedEffect(selectedFormat) {
+            saveFormatPreference(context, selectedFormat)
+        }
+
         OutlinedTextField(
             value = event1Odds,
             onValueChange = { event1Odds = it },
@@ -76,7 +85,7 @@ fun BettingArbCalcScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
 
-        var selectedFormat by remember { mutableStateOf("Decimal") }
+
         val formats = listOf("Decimal", "Money Line", "Fractional")
         Row(
             modifier = Modifier
@@ -162,5 +171,18 @@ fun BettingArbCalcScreen(navController: NavController) {
             )
         }
     }
+}
+
+private fun saveFormatPreference(context: Context, format: String) {
+    val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    with(sharedPref.edit()) {
+        putString("SelectedFormat", format)
+        apply()
+    }
+}
+
+private fun loadSavedFormat(context: Context): String {
+    val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    return sharedPref.getString("SelectedFormat", "Decimal") ?: "Decimal"
 }
 

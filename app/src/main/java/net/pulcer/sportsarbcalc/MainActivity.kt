@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,8 +29,17 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+                    var event1Odds by rememberSaveable { mutableStateOf("") }
+                    var event2Odds by rememberSaveable { mutableStateOf("") }
+                    var event3Odds by rememberSaveable { mutableStateOf("") }
+
                     NavHost(navController = navController, startDestination = "bettingArbCalc") {
-                        composable("bettingArbCalc") { BettingArbCalcScreen(navController) }
+                        composable("bettingArbCalc") {
+                            BettingArbCalcScreen(navController, event1Odds, event2Odds, event3Odds,
+                                onEvent1OddsChange = { event1Odds = it },
+                                onEvent2OddsChange = { event2Odds = it },
+                                onEvent3OddsChange = { event3Odds = it })
+                        }
                         composable("arb") { ArbScreen(onGoBack = { navController.navigateUp() }) }
                         composable("noArb") { NoArbScreen(onGoBack = { navController.navigateUp() }) }
                     }
@@ -41,18 +51,23 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BettingArbCalcScreen(navController: NavController) {
+fun BettingArbCalcScreen(
+    navController: NavController,
+    event1Odds: String,
+    event2Odds: String,
+    event3Odds: String,
+    onEvent1OddsChange: (String) -> Unit,
+    onEvent2OddsChange: (String) -> Unit,
+    onEvent3OddsChange: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        var event1Odds by remember { mutableStateOf("") }
-        var event2Odds by remember { mutableStateOf("") }
-        var event3Odds by remember { mutableStateOf("") }
-        var showAlert by remember { mutableStateOf(false) }
 
+        var showAlert by remember { mutableStateOf(false) }
         val context = LocalContext.current
         var selectedFormat by remember { mutableStateOf(loadSavedFormat(context)) }
 
@@ -62,7 +77,7 @@ fun BettingArbCalcScreen(navController: NavController) {
 
         OutlinedTextField(
             value = event1Odds,
-            onValueChange = { event1Odds = it },
+            onValueChange = onEvent1OddsChange,
             label = { Text("Event 1 Odds") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -71,7 +86,7 @@ fun BettingArbCalcScreen(navController: NavController) {
 
         OutlinedTextField(
             value = event2Odds,
-            onValueChange = { event2Odds = it },
+            onValueChange = onEvent2OddsChange,
             label = { Text("Event 2 Odds") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -80,7 +95,7 @@ fun BettingArbCalcScreen(navController: NavController) {
 
         OutlinedTextField(
             value = event3Odds,
-            onValueChange = { event3Odds = it },
+            onValueChange = onEvent3OddsChange,
             label = { Text("Event 3 Odds") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -105,14 +120,15 @@ fun BettingArbCalcScreen(navController: NavController) {
 
         Button(
             onClick = {
-                event1Odds = ""
-                event2Odds = ""
-                event3Odds = ""
+                onEvent1OddsChange("")
+                onEvent2OddsChange("")
+                onEvent3OddsChange("")
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Clear All")
         }
+
 
 
         Spacer(modifier = Modifier.height(8.dp))

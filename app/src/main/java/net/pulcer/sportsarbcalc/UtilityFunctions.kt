@@ -108,3 +108,29 @@ fun Context.openUrl(url: String) {
         Toast.makeText(this, "No web browser found to open this link: $url", Toast.LENGTH_LONG).show()
     }
 }
+
+fun Context.saveFormatPreference(format: String) {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    with(sharedPref.edit()) {
+        putString("SelectedFormat", format)
+        apply()
+    }
+}
+
+fun Context.loadSavedFormat(): String {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    return sharedPref.getString("SelectedFormat", "Decimal") ?: "Decimal"
+}
+
+fun Context.saveWagerAmount(amount: String) {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    with(sharedPref.edit()) {
+        putString("WagerAmount", amount)
+        apply()
+    }
+}
+
+fun Context.loadSavedWagerAmount(): String {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    return sharedPref.getString("WagerAmount", "") ?: ""
+}

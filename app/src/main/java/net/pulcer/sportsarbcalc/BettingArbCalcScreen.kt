@@ -33,8 +33,6 @@ import androidx.navigation.NavController
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BettingArbCalcScreen(
@@ -56,37 +54,146 @@ fun BettingArbCalcScreen(
         val viewModel: ArbViewModel = viewModel(LocalContext.current as ViewModelStoreOwner)
         var showAlert by remember { mutableStateOf(false) }
         val context = LocalContext.current
-        var selectedFormat by remember { mutableStateOf(loadSavedFormat(context)) }
+        var selectedFormat by remember { mutableStateOf(context.loadSavedFormat()) }
+        var wagerAmount by remember { mutableStateOf(context.loadSavedWagerAmount()) }
+
+        var event1WagerAmount by remember { mutableStateOf("0.00") }
+        var event2WagerAmount by remember { mutableStateOf("0.00") }
+        var event3WagerAmount by remember { mutableStateOf("0.00") }
+        var profitAmount by remember { mutableStateOf("0.00") }
 
         LaunchedEffect(selectedFormat) {
-            saveFormatPreference(context, selectedFormat)
+            context.saveFormatPreference(selectedFormat)
         }
 
-        OutlinedTextField(
-            value = event1Odds,
-            onValueChange = onEvent1OddsChange,
-            label = { Text("Event 1 Odds") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        LaunchedEffect(event1Odds, event2Odds, event3Odds, wagerAmount, selectedFormat) {
+            val eventOddsArray = EventOdds(listOf(event1Odds.trim(), event2Odds.trim(), event3Odds.trim()))
+            if (verifyInputs(eventOddsArray, selectedFormat)) {
+                val decimalOdds = convertToDecimalOdds(eventOddsArray, selectedFormat)
+                val (arbOpportunity, bettingPercentages) = isArbitrageOpportunity(decimalOdds)
+
+                if (arbOpportunity && wagerAmount.isNotBlank()) {
+                    val wagerAmountValue = wagerAmount.toDoubleOrNull() ?: 0.0
+                    val percentages = bettingPercentages!!.percentages
+
+                    event1WagerAmount = "$%.2f".format(wagerAmountValue * percentages[0])
+                    event2WagerAmount = "$%.2f".format(wagerAmountValue * percentages[1])
+                    if (percentages.size > 2) {
+                        event3WagerAmount = "$%.2f".format(wagerAmountValue * percentages[2])
+                    }
+
+                    val totalWager = wagerAmountValue
+                    val maxPayout = maxOf(
+                        wagerAmountValue * percentages[0] * decimalOdds.odds[0],
+                        wagerAmountValue * percentages[1] * decimalOdds.odds[1],
+                        if (percentages.size > 2) wagerAmountValue * percentages[2] * decimalOdds.odds[2] else 0.0
+                    )
+                    profitAmount = "$%.2f".format(maxPayout - totalWager)
+                } else {
+                    event1WagerAmount = "0.00"
+                    event2WagerAmount = "0.00"
+                    event3WagerAmount = "0.00"
+                    profitAmount = "0.00"
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            OutlinedTextField(
+                value = event1Odds,
+                onValueChange = onEvent1OddsChange,
+                label = { Text("Event 1 Odds") },
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+
+            OutlinedTextField(
+                value = event1WagerAmount,
+                onValueChange = { },
+                label = { Text("Amount Wagered") },
+                modifier = Modifier.weight(1f),
+                readOnly = true
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = event2Odds,
-            onValueChange = onEvent2OddsChange,
-            label = { Text("Event 2 Odds") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            OutlinedTextField(
+                value = event2Odds,
+                onValueChange = onEvent2OddsChange,
+                label = { Text("Event 2 Odds") },
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+
+            OutlinedTextField(
+                value = event2WagerAmount,
+                onValueChange = { },
+                label = { Text("Amount Wagered") },
+                modifier = Modifier.weight(1f),
+                readOnly = true
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = event3Odds,
-            onValueChange = onEvent3OddsChange,
-            label = { Text("Event 3 Odds") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            OutlinedTextField(
+                value = event3Odds,
+                onValueChange = onEvent3OddsChange,
+                label = { Text("Event 3 Odds") },
+                modifier = Modifier.weight(1f)
+            )
 
+            Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+
+            OutlinedTextField(
+                value = event3WagerAmount,
+                onValueChange = { },
+                label = { Text("Amount Wagered") },
+                modifier = Modifier.weight(1f),
+                readOnly = true
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            OutlinedTextField(
+                value = wagerAmount,
+                onValueChange = { newAmount ->
+                    wagerAmount = newAmount
+                    context.saveWagerAmount(newAmount)
+                },
+                label = { Text("Wager Amount") },
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+
+            OutlinedTextField(
+                value = profitAmount,
+                onValueChange = { },
+                label = { Text("Profit") },
+                modifier = Modifier.weight(1f),
+                readOnly = true
+            )
+        }
 
         val formats = listOf("Decimal", "Money Line", "Fractional")
         Row(
@@ -110,43 +217,12 @@ fun BettingArbCalcScreen(
                 onEvent1OddsChange("")
                 onEvent2OddsChange("")
                 onEvent3OddsChange("")
+                wagerAmount = ""
+                context.saveWagerAmount("")
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Clear All")
-        }
-
-
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = {
-                val encodedEvent1Odds = URLEncoder.encode(event1Odds.trim(), StandardCharsets.UTF_8.toString())
-                val encodedEvent2Odds = URLEncoder.encode(event2Odds.trim(), StandardCharsets.UTF_8.toString())
-                val encodedEvent3Odds = URLEncoder.encode(if (event3Odds.trim().isNotEmpty()) event3Odds.trim() else "none", StandardCharsets.UTF_8.toString())
-
-                val eventOddsArray = EventOdds(listOf(event1Odds.trim(), event2Odds.trim(), event3Odds.trim()))
-                if (!verifyInputs(eventOddsArray, selectedFormat)) {
-                    showAlert = true
-                } else {
-                    val decimalOdds = convertToDecimalOdds(eventOddsArray, selectedFormat)
-
-                    viewModel.setDecimalOdds(decimalOdds)
-
-                    val (arbOpportunity, bettingPercentages) = isArbitrageOpportunity(decimalOdds)
-
-                    if (arbOpportunity) {
-                        viewModel.setBettingPercentages(bettingPercentages!!.percentages)
-                        navController.navigate("arb/$encodedEvent1Odds/$encodedEvent2Odds/$encodedEvent3Odds")
-                    } else {
-                        navController.navigate("noArb")
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Calculate")
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -157,6 +233,7 @@ fun BettingArbCalcScreen(
         ) {
             Text("Settings")
         }
+
         if (showAlert) {
             AlertDialog(
                 onDismissRequest = { showAlert = false },
@@ -180,17 +257,3 @@ fun BettingArbCalcScreen(
         }
     }
 }
-
-private fun saveFormatPreference(context: Context, format: String) {
-    val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-    with(sharedPref.edit()) {
-        putString("SelectedFormat", format)
-        apply()
-    }
-}
-
-private fun loadSavedFormat(context: Context): String {
-    val sharedPref = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-    return sharedPref.getString("SelectedFormat", "Decimal") ?: "Decimal"
-}
-

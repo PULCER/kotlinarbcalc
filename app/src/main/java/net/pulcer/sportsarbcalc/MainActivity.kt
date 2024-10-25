@@ -39,28 +39,6 @@ class MainActivity : ComponentActivity() {
                                 onEvent3OddsChange = { event3Odds = it })
                         }
 
-                        composable(
-                            route = "arb/{event1Odds}/{event2Odds}/{event3Odds}",
-                            arguments = listOf(
-                                navArgument("event1Odds") { type = NavType.StringType },
-                                navArgument("event2Odds") { type = NavType.StringType },
-                                navArgument("event3Odds") {
-                                    type = NavType.StringType
-                                    nullable = true
-                                    defaultValue = "none"
-                                }
-                            )
-                        ) { backStackEntry ->
-                            ArbScreen(
-                                onGoBack = { navController.navigateUp() },
-                                event1OddsEncoded = backStackEntry.arguments?.getString("event1Odds") ?: "",
-                                event2OddsEncoded = backStackEntry.arguments?.getString("event2Odds") ?: "",
-                                event3OddsEncoded = backStackEntry.arguments?.getString("event3Odds")
-                            )
-                        }
-
-
-                        composable("noArb") { NoArbScreen(onGoBack = { navController.navigateUp() }) }
                         composable("settings") {
                             SettingsScreen(onGoBackClicked = { navController.navigateUp() })
                         }

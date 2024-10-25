@@ -56,6 +56,7 @@ fun BettingArbCalcScreen(
         val context = LocalContext.current
         var selectedFormat by remember { mutableStateOf(context.loadSavedFormat()) }
         var wagerAmount by remember { mutableStateOf(context.loadSavedWagerAmount()) }
+        var selectedOption by remember { mutableStateOf("Wager") }
 
         var event1WagerAmount by remember { mutableStateOf("0.00") }
         var event2WagerAmount by remember { mutableStateOf("0.00") }
@@ -76,27 +77,59 @@ fun BettingArbCalcScreen(
             context.saveFormatPreference(selectedFormat)
         }
 
-        LaunchedEffect(event1Odds, event2Odds, event3Odds, wagerAmount, selectedFormat) {
+        fun calculateWageredAmount(eventIndex: Int, eventBettingPercentage: Double, bettingPercentages: List<Double>): String {
+            val selectedEventIndex = when (selectedOption) {
+                "E1" -> 0
+                "E2" -> 1
+                "E3" -> 2
+                else -> -1
+            }
+
+            val wagerAmountValue = wagerAmount.toDoubleOrNull() ?: return "0.00"
+
+            return when (selectedEventIndex) {
+                -1 -> {
+                    val wageredAmount = wagerAmountValue * eventBettingPercentage
+                    "$%.2f".format(wageredAmount)
+                }
+                0, 1, 2 -> {
+                    if (eventIndex == selectedEventIndex) {
+                        "$%.2f".format(wagerAmountValue)
+                    } else {
+                        val selectedEventPercentage = bettingPercentages.getOrElse(selectedEventIndex) { 1.0 }
+                        val totalWager = if (selectedEventPercentage > 0) wagerAmountValue / selectedEventPercentage else 0.0
+                        val otherEventWager = totalWager * eventBettingPercentage
+                        "$%.2f".format(otherEventWager)
+                    }
+                }
+                else -> "0.00"
+            }
+        }
+
+        LaunchedEffect(event1Odds, event2Odds, event3Odds, wagerAmount, selectedFormat, selectedOption) {
             val eventOddsArray = EventOdds(listOf(event1Odds.trim(), event2Odds.trim(), event3Odds.trim()))
             if (verifyInputs(eventOddsArray, selectedFormat)) {
                 val decimalOdds = convertToDecimalOdds(eventOddsArray, selectedFormat)
                 val (arbOpportunity, bettingPercentages) = isArbitrageOpportunity(decimalOdds)
 
                 if (arbOpportunity && wagerAmount.isNotBlank()) {
-                    val wagerAmountValue = wagerAmount.toDoubleOrNull() ?: 0.0
                     val percentages = bettingPercentages!!.percentages
 
-                    event1WagerAmount = "$%.2f".format(wagerAmountValue * percentages[0])
-                    event2WagerAmount = "$%.2f".format(wagerAmountValue * percentages[1])
+                    event1WagerAmount = calculateWageredAmount(0, percentages[0], percentages)
+                    event2WagerAmount = calculateWageredAmount(1, percentages[1], percentages)
                     if (percentages.size > 2) {
-                        event3WagerAmount = "$%.2f".format(wagerAmountValue * percentages[2])
+                        event3WagerAmount = calculateWageredAmount(2, percentages[2], percentages)
                     }
 
-                    val totalWager = wagerAmountValue
+                    val event1Value = event1WagerAmount.removePrefix("$").toDoubleOrNull() ?: 0.0
+                    val event2Value = event2WagerAmount.removePrefix("$").toDoubleOrNull() ?: 0.0
+                    val event3Value = event3WagerAmount.removePrefix("$").toDoubleOrNull() ?: 0.0
+
+                    val totalWager = event1Value + event2Value + event3Value
                     val maxPayout = maxOf(
-                        wagerAmountValue * percentages[0] * decimalOdds.odds[0],
-                        wagerAmountValue * percentages[1] * decimalOdds.odds[1],
-                        if (percentages.size > 2) wagerAmountValue * percentages[2] * decimalOdds.odds[2] else 0.0
+                        event1Value * decimalOdds.odds[0],
+                        event2Value * decimalOdds.odds[1],
+                        if (percentages.size > 2) event3Value * decimalOdds.odds[2] else 0.0
                     )
                     profitAmount = "$%.2f".format(maxPayout - totalWager)
                 } else {
@@ -222,14 +255,36 @@ fun BettingArbCalcScreen(
             }
         }
 
+        val options = listOf("Wager", "E1", "E2") + (if (event3Odds.isNotBlank()) listOf("E3") else emptyList())
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            options.forEach { option ->
+                OutlinedButton(
+                    onClick = { selectedOption = option },
+                    border = if (option == selectedOption) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(option)
+                }
+            }
+        }
+
         Button(
             onClick = {
                 onEvent1OddsChange("")
                 onEvent2OddsChange("")
                 onEvent3OddsChange("")
                 wagerAmount = ""
+                event1WagerAmount = "0.00"
+                event2WagerAmount = "0.00"
+                event3WagerAmount = "0.00"
+                profitAmount = "0.00"
                 context.saveEventOdds("", "", "")
                 context.saveWagerAmount("")
+                selectedOption = "Wager"
             },
             modifier = Modifier.fillMaxWidth()
         ) {

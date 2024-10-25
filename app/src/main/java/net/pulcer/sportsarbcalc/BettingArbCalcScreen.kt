@@ -62,6 +62,16 @@ fun BettingArbCalcScreen(
         var event3WagerAmount by remember { mutableStateOf("0.00") }
         var profitAmount by remember { mutableStateOf("0.00") }
 
+        LaunchedEffect(Unit) {
+            onEvent1OddsChange(context.loadSavedEvent1Odds())
+            onEvent2OddsChange(context.loadSavedEvent2Odds())
+            onEvent3OddsChange(context.loadSavedEvent3Odds())
+        }
+
+        LaunchedEffect(event1Odds, event2Odds, event3Odds) {
+            context.saveEventOdds(event1Odds, event2Odds, event3Odds)
+        }
+
         LaunchedEffect(selectedFormat) {
             context.saveFormatPreference(selectedFormat)
         }
@@ -218,6 +228,7 @@ fun BettingArbCalcScreen(
                 onEvent2OddsChange("")
                 onEvent3OddsChange("")
                 wagerAmount = ""
+                context.saveEventOdds("", "", "")
                 context.saveWagerAmount("")
             },
             modifier = Modifier.fillMaxWidth()

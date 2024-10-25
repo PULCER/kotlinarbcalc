@@ -134,3 +134,28 @@ fun Context.loadSavedWagerAmount(): String {
     val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
     return sharedPref.getString("WagerAmount", "") ?: ""
 }
+
+fun Context.saveEventOdds(event1: String, event2: String, event3: String) {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    with(sharedPref.edit()) {
+        putString("Event1Odds", event1)
+        putString("Event2Odds", event2)
+        putString("Event3Odds", event3)
+        apply()
+    }
+}
+
+fun Context.loadSavedEvent1Odds(): String {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    return sharedPref.getString("Event1Odds", "") ?: ""
+}
+
+fun Context.loadSavedEvent2Odds(): String {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    return sharedPref.getString("Event2Odds", "") ?: ""
+}
+
+fun Context.loadSavedEvent3Odds(): String {
+    val sharedPref = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+    return sharedPref.getString("Event3Odds", "") ?: ""
+}

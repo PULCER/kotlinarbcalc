@@ -152,10 +152,10 @@ fun BettingArbCalcScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { /* About Logic */ },
+            onClick = { navController.navigate("settings") },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("About")
+            Text("Settings")
         }
         if (showAlert) {
             AlertDialog(

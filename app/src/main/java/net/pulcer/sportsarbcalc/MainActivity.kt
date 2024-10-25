@@ -61,6 +61,9 @@ class MainActivity : ComponentActivity() {
 
 
                         composable("noArb") { NoArbScreen(onGoBack = { navController.navigateUp() }) }
+                        composable("settings") {
+                            SettingsScreen(onGoBackClicked = { navController.navigateUp() })
+                        }
                     }
                 }
             }

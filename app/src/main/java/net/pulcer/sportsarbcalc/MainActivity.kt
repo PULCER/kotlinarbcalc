@@ -42,6 +42,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("arb") { ArbScreen(onGoBack = { navController.navigateUp() }) }
                         composable("noArb") { NoArbScreen(onGoBack = { navController.navigateUp() }) }
+                        composable("settings") {
+                            SettingsScreen(onGoBackClicked = { navController.navigateUp() })
+                        }
                     }
                 }
             }
@@ -160,10 +163,10 @@ fun BettingArbCalcScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { /* About Logic */ },
+            onClick = { navController.navigate("settings") },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("About")
+            Text("Settings")
         }
         if (showAlert) {
             AlertDialog(

@@ -35,7 +35,6 @@ fun convertToDecimalOdds(eventOdds: EventOdds, format: String): DecimalOdds {
             else -> 0.0
         }
     }
-    println(decimalOdds)
     return DecimalOdds(decimalOdds)
 }
 
